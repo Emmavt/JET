@@ -1,4 +1,5 @@
 FROM continuumio/anaconda3
+LABEL maintainer='Emma Turtelboom, eturtelboom@berkeley.edu'
 RUN conda create -n myenv python=3.6.2
 SHELL ["conda", "run", "-n", "myenv", "/bin/bash", "-c"]
 
