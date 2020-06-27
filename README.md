@@ -1,4 +1,4 @@
-﻿# *JWST* Exoplanet Targeting program (JET)
+# *JWST* Exoplanet Targeting program (JET)
 Computer tool to rank lists of exoplanet targets for atmospheric characterization by *JWST*.
 
 ## Description
@@ -35,42 +35,61 @@ The *James Webb Space Telescope* (*JWST*) will devote significant observing time
 
 * The VirtualBox software allows files to be shared between the two OS's, which is very useful, but otherwise it keeps the two systems separate.  In order to implement the file sharing feature it was necessary to edit the system BIOS to enable the CPU's virtualization features.  Unfortunately, the details of the editing are different with different motherboards and CPU hardware so it is hard to give specifics here.  The key is to sort through the BIOS menus at boot up to find the CPU virtualization feature toggle and enable it.  Of course, if the JET suite is installed on a Linux machine in the first place there is no need to worry about virtualization software.
 
-*New*
-* We have used Docker to containerize the required packages for the JET code. Docker will serve a similar purpose in this case as conda environments do, by creating an isolated "container", where all the required package are installed without compromising any existing package dependencies or versions that you already have on your computer. Containers are based off of "images", and in this repo we include the instruction manual (a Dockerfile) for an image that includes the required software to run JET. The following instructions will use this manual to set up the JET code for your use.
+* The JET code was written in Python 3.6.1/2.  It is highly recommended that you use Python 3.6.2 to run JET.
 
-1. Install Docker (https://www.docker.com/products/docker-desktop).
+* JET has a number of Python dependencies (see Table 2); however, many of them will be satisfied by an up-to-date scientific Python installation.  Unless you actively maintain your own scientific Python distribution, we recommend installing the latest Anaconda Linux distribution (currently, as of 7-5-2019, for Python 3.7) and running the following command to downgrade to Python 3.6 in the root environment:
 
-2. Once you have installed Docker, make sure that Docker Desktop (or Server for Linux users) is running.
+ ```conda install python=3.6.2```
 
-3. Next, you need to download certain data-files associated with PandExo/Pandeia.  The first is a set of files for Pandeia itself, which can be downloaded from: https://stsci.app.box.com/v/pandeia-refdata-v1p4.  Once the download is complete, move the tar file from your download folder to the JET/Docker_Files directory of this repository, which should already contain a file named JET_dockerfile.txt.
+* To avoid conflicts, it is recommended that you first remove/uninstall any existing packages shown in Table 2 with the incorrect version/build.  You can see the packages available in your Anaconda distribution with the command:  ```conda list```.
 
-4. Next, you will need to download another set of data-files associated with PandExo.  The second set of data-files are for pysynphot. Pandeia uses pysynphot internally for creating reference spectra. The pysynphot reference files may be downloaded from: https://archive.stsci.edu/pub/hst/pysynphot/.  We want to download **synphot5.tar.gz**.  Move the tar file from your download folder to the JET/Docker_Files directory.  
+* To remove packages that do not have the < pip > designation, you can use the command:
 
-5. In order to use Docker to create a container with the full environment required to run JET, navigate to the JET/Docker_Files directory in your terminal, and enter the command: ```docker build . -f ./JET_dockerfile.txt  -t jet_image``` This command will take ~20 minutes to run, with lots of outputs, and builds a Docker image based on JET_dockerfile.txt. You will create containers on top of this image, in which you can run JET code.
+ ```conda remove package_name```
 
-6. Check whether the image has been created by running ```docker images```, and seeing if one of the images listed is named jet_image.
+* For packages with the < pip > designation, you can use the command:
 
-7. Create a container based on the "jet_image" image with the command ```docker container create -it jet_image```. This step can be repeated every time you wish to use JET, but please note that different containers will not include the same versions of files (i.e. an output file from a JET run in one container will not be present in another container based on the same image).
+ ```pip uninstall package_name```
 
-8. Use ```docker ps -a``` to get a list of all containers, and copy the name of the container you just created (usually two words separated by an underscore, e.g. "adequate_pandas").
+* **Warning!**:  rolling back certain elements of your Python package distribution, may break other Python programs that are dependent on your existing package distribution.  It may make sense to use virtualenv (https://pypi.org/project/virtualenv/), a tool to create isolated Python environments.
 
-9. In order to "enter" a container and run the JET code, you will need to enter two commands: ```docker start CONTAINER``` and then ```docker attach CONTAINER```, where CONTAINER is the name of the container you copied in the step 8. Once you have run these two commands, your terminal will enter the container, where you can now run commands.
+* For those packages that are not included in the basic conda distribution, you will need to enable certain additional distribution channels with:
 
-10. The first command you should run is ```source activate myenv```, in order to use the appropriate python version (Python 3.6.2).
+ ```conda config --add channels conda-forge```
 
-11. Navigate to the JET directory, which should contain the two .tar.gz files. These are in gzip form and can be unpacked in the working directory with the commands:
- ```$ tar -xvzf pandeia_data-1.4.tar.gz```
-```$ tar -xvzf synphot5.tar.gz```
+ and
 
- Once the files are unpacked you should be left with a folder/directory named **pandeia_data-1.4**, **grp**, and the tar files.  The tar files can then be deleted.
+ ```conda config --add channels http://ssb.stsci.edu/astroconda```
 
- Your working directory should now have all of the necessary elements of JET, including all files and folders associated with Exo-Transmit and PandExo. Of course it is possible to download the latest version of Exo-Transmit (source code) from GitHub (see https://github.com/elizakempton/Exo_Transmit), but for simplicity we have chosen to include a fully compiled, and tested version of Exo-Transmit as part of the JET download.  There are also some minor changes to a couple of the baseline Exo-Transmit data-files that we have made for JET to work properly.
+ This only needs to be done once, not for each package.
 
-  In some cases, high-metallicity atmospheres in particular, can be optically thick all the way to the very top of the atmosphere, at certain wavelengths.  This will cause a hard cutoff of the spectrum at a specific transit depth.  To extend the atmosphere to higher levels (i.e., lower pressures), more lines have been added to the original release T-P files (we went from 333 to 533 lines), extending the decaying exponential to lower pressure.  The number of optical depth points given in the file: **otherInput.in**, has also been be modified to give the correct number of lines for the new T-P files.  You should not need to edit these files further.
+* It is recommended that you install the version/build of the packages specified in Table 2. There are various complex dependencies and this build has been verified.  
 
-  There are several input files associated with Exo-Transmit that have not been described in detail (e.g., **selectChem.in**, **otherInput.in**, and **userInput.in**).  For our purposes these should not have to be disturbed by the user; however, it is possible to make changes to these if necessary.  Further details can be found in the Exo-Transmit user manual included in this repository, or at https://github.com/elizakempton/Exo_Transmit.
+* Many of the required packages (unless they have < pip > in the build column of Table 2) can then be installed from the Linux command line with:
 
-12. When this process has been completed for all of the required packages, again use the Linux command ```conda list``` to verify that all packages and modules shown in Table 2 are installed:
+ ```conda install package_name=version=build_string```
+
+ For example:
+
+ ```conda install joblib=0.11=py36_0```
+
+* For those packages with a non-conda channel, you should use the command:
+
+ ```conda install -c channel package_name=version=build_string```
+
+ For example:
+
+ ```conda install -c conda-forge astropy=3.2.3```
+
+ or another example:
+
+ ```conda install -c http://ssb.stsci.edu/astroconda photutils=0.4.1```
+
+* For the remaining packages, you will need to use the pip package manager.  For example, to install numpy use the command:
+
+ ```pip install numpy=1.14.0```
+
+* When this process has been completed for all of the required packages, again use the Linux command ```conda list``` to verify that all packages and modules shown in Table 2 are installed:
 
  Table 2. Python Packages/Modules for JET Installation
 
@@ -92,8 +111,27 @@ The *James Webb Space Telescope* (*JWST*) will devote significant observing time
 | sphinx                | Python pkg.       | 1.5.6                                  | conda-forge                         |
 | synphot               | Python pkg.       | 0.1.3                                  | http://ssb.stsci.edu/astroconda     |
 
+### Installing the JET Code
 
-13. You should also verify that you have all files and folders listed in Table 3 in the JET directory in your container.
+1. Now, choose/create a working directory for the JET code within your Linux system file structure.
+
+2. Open a terminal in your Linux Download directory.  Then, download the JET repository tar file from GitHub with the command:
+
+ ```curl -L https://github.com/cdfortenbach/JET/tarball/master > master```
+
+   This is a big file, so it may take a few minutes.  You should eventually see a folder/directory called **master** appear in the Download directory.
+
+3. Now, unpack the **master** tar file with the command:
+
+ ```tar -xvzf master```
+
+   you should now see a new folder/directory called **cdfortenbach-JET-*commitID#***.   
+
+4. Open this folder/directory and move the contents to your working directory.  
+
+5. The downloaded tar file (**master**), and the now empty folder/directory **cdfortenbach-JET-*commitID#*** can be deleted.  
+
+6. You should verify that you have all files and folders listed in Table 3.
 
  Table 3. Files and Folders in JET Working Directory
 
@@ -124,9 +162,26 @@ The *James Webb Space Telescope* (*JWST*) will devote significant observing time
 | target_survey.txt           | .txt file in format of the "Sullivan" survey .mrt                                        |
 | userInput.in                | internal transfer file assoc. with Exo-Transmit                                          |
 
- You can now interact with the JET code in this container. When you would like to finish using the code, use the command ```exit``` to leave the Docker container and return to your current working directory. When you would like to use the JET code again, please repeat Steps 9-15.
 
-14. It is recommended that the user edit certain print statements in the **PandExo.engine** (installed as a Python package in the Anaconda directory) that are unnecessary and time consuming in our long, many-target runs. Specifically, we recommend that you "comment out" (add leading # character to the line) the following lines in **justdoit.py** and **jwst.py**:
+7. Next, you need to download certain data-files associated with PandExo/Pandeia.  The first is a set of files for Pandeia itself, which can be downloaded from: https://stsci.app.box.com/v/pandeia-refdata-v1p4.  Once the download is complete, move the tar file from your download folder to the JET working directory.  This is in gzip form and can be unpacked in the working directory. Use the command:
+
+ ```$ tar -xvzf pandeia_data-1.4.tar.gz```  
+
+  to unpack the tar file. Once the files are unpacked you should be left with a folder/directory named **pandeia_data-1.4**.  The tar file can then be deleted.
+
+8. Next, you will need to download another set of data-files associated with PandExo.  The second set of data-files are for pysynphot. Pandeia uses pysynphot internally for creating reference spectra. The pysynphot reference files may be downloaded from: https://archive.stsci.edu/pub/hst/pysynphot/.  We want to download **synphot5.tar.gz**.  Move the tar file from your download folder to the JET working directory.  This is also in gzip form and can be unpacked in the working directory with the command:
+
+ ```$ tar -xvzf synphot5.tar.gz```
+
+  Once the files are unpacked you should be left with a folder/directory named **grp** and the tar file.  The tar file can be deleted.
+
+ Your working directory should now have all of the necessary elements of JET, including all files and folders associated with Exo-Transmit and PandExo. Of course it is possible to download the latest version of Exo-Transmit (source code) from GitHub (see https://github.com/elizakempton/Exo_Transmit), but for simplicity we have chosen to include a fully compiled, and tested version of Exo-Transmit as part of the JET download.  There are also some minor changes to a couple of the baseline Exo-Transmit data-files that we have made for JET to work properly.
+
+  In some cases, high-metallicity atmospheres in particular, can be optically thick all the way to the very top of the atmosphere, at certain wavelengths.  This will cause a hard cutoff of the spectrum at a specific transit depth.  To extend the atmosphere to higher levels (i.e., lower pressures), more lines have been added to the original release T-P files (we went from 333 to 533 lines), extending the decaying exponential to lower pressure.  The number of optical depth points given in the file: **otherInput.in**, has also been be modified to give the correct number of lines for the new T-P files.  You should not need to edit these files further.
+
+  There are several input files associated with Exo-Transmit that have not been described in detail (e.g., **selectChem.in**, **otherInput.in**, and **userInput.in**).  For our purposes these should not have to be disturbed by the user; however, it is possible to make changes to these if necessary.  Further details can be found in the Exo-Transmit user manual included in this repository, or at https://github.com/elizakempton/Exo_Transmit.
+
+9. It is recommended that the user edit certain print statements in the **PandExo.engine** (installed as a Python package in the Anaconda directory) that are unnecessary and time consuming in our long, many-target runs. Specifically, we recommend that you "comment out" (add leading # character to the line) the following lines in **justdoit.py** and **jwst.py**:
 
     anconda3/lib/python3.6/site-packages/pandexo/engine/justdoit.py - line 267
     	should be:   ```#print("Running Single Case for: " + inst[0])```
@@ -149,17 +204,16 @@ The *James Webb Space Telescope* (*JWST*) will devote significant observing time
     anconda3/lib/python3.6/site-packages/pandexo/engine/jwst.py - line 178
     	should be:   ```#print("End In Transit")```
 
-15. That’s it!  You have completed the JET installation.
+10. That’s it!  You have completed the JET installation.
 
 
 ### Executing the program
 
 The following step-by-step process should guide you through making a run with the JET code:
 
-1.  First, using a GUI (e.g., Ubuntu, etc.) or with a Linux terminal and Docker commands ```docker start CONTAINER``` and ```docker attach CONTAINER```, navigate to the JET working directory.
+1.  First, using a GUI (e.g., Ubuntu, etc.) or with a Linux terminal, navigate to the JET working directory.
 
-2.  If you want to start fresh, then the folders **dBIC**, **Spectra**, **Pdxo_Output_archive**, and **JET_Smry_tables** should be cleaned out for a new run. Any files in these folders/directories can be saved elsewhere on your local machine as appropriate, by using the command ```docker cp CONTAINER:SRC_PATH DEST_PATH|-``` (https://docs.docker.com/engine/reference/commandline/cp/). The dummy **README** file in each of these folder/directories can be left in place. Alternatively, you can create a new container starting at Step 7 in the Software Installation.
-*endnew*
+2.  If you want to start fresh, then the folders **dBIC**, **Spectra**, **Pdxo_Output_archive**, and **JET_Smry_tables** should be cleaned out for a new run.  Any files in these folders/directories can be saved elsewhere as appropriate. The dummy **README** file in each of these folder/directories can be left in place.
 
 3.  Using a .txt editor (or development environment), open the **JET_Input.txt** file and make the appropriate changes to the input parameters.  The following shows an example set-up for a run with NIRSpec G395M.  Only the boldface parameters should be changed.  Only make changes to User Input values in rows 7 - 46, and cols 60 - 79!!   Do not change the syntax for any item.  This is a comma delimited file.  Commas should only be included where indicated.
 
